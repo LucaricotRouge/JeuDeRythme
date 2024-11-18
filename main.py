@@ -6,7 +6,13 @@ import time
 import openpyxl
 from openpyxl import Workbook
 import os 
-import serial 
+import serial
+
+# Spécifier le port série (vérifie le port COM dans l'IDE Arduino)
+# ser = serial.Serial('COM3', 9600, timeout=1)  # Remplace 'COM3' par ton port
+# time.sleep(2)  # Attendre que la connexion soit établie
+
+print("Connexion série établie...")
 
 pygame.init()
 
@@ -587,7 +593,7 @@ def check_full_hitM(cochon):
 
 def check_full_hitF(cochon):
 
-    global score, precisionPerfect, precisionGood, nombreDeClick, misscounter, is_attacking
+    global score, precisionPerfect, precisionGood, nombreDeClick, misscounter, is_attacking #, ser
     """Vérifie si la hitbox du cochon est complètement à l'intérieur des hitboxes du personnage"""
     # Récupérer la hitbox du cochon
     cochon_hitbox = cochon["hitbox"]
@@ -601,6 +607,10 @@ def check_full_hitF(cochon):
         precisionPerfect[selected_player_index] +=1
         nombreDeClick[selected_player_index] += 1
         is_attacking = False
+        # if ser.is_open:
+        #     ser.write(("Perfect" + '\n').encode())  # Envoyer le résultat à l'Arduino
+        #     time.sleep(1)
+
         return "Perfect", GREEN
     
     elif hitboxGoodJF.collidepoint(cochon_hitbox.topleft) and \
@@ -611,11 +621,19 @@ def check_full_hitF(cochon):
         precisionGood[selected_player_index] +=1
         nombreDeClick[selected_player_index] += 1
         is_attacking = False 
+        # if ser.is_open:
+        #     ser.write(("Good" + '\n').encode())  # Envoyer le résultat à l'Arduino
+        #     time.sleep(1)
+            
         return "Good", BLUE
     
     is_attacking = False
     misscounter += 1
     nombreDeClick[selected_player_index] +=1
+    # if ser.is_open:
+    #     ser.write(("Miss" + '\n').encode())  # Envoyer le résultat à l'Arduino
+    #     time.sleep(1)
+            
     return "Miss", RED 
 
 result_displayed = False
@@ -639,7 +657,7 @@ def draw_game_screen():
     if(players[selected_player_index].sex == "M"):
         
         # Vérifier si l'intervalle de 0.5 seconde est passé
-        if current_time - last_switch_time >= switch_interval and misscounter <5:
+        if current_time - last_switch_time >= switch_interval and misscounter == 0:
             # Alterner entre JM1 et JM2
             if current_imageJM == JM1: # si on détecte JM1 dans la zone où a été chargé l'image JM1
                 current_imageJM = JM2
@@ -649,7 +667,7 @@ def draw_game_screen():
             # Mettre à jour le temps de changement d'image
             last_switch_time = current_time
         
-        if is_attacking and misscounter <5:
+        if is_attacking and misscounter == 0:
             if current_time - attack_start_time < switch_interval:
                 # Afficher l'image d'attaque pendant 0.5 seconde
                 current_imageJM = JMAttack
@@ -659,7 +677,7 @@ def draw_game_screen():
                 attack_start_time = 0
 
         # Vérifier si l'intervalle de 0.5 seconde est passé
-        if current_time - last_switch_time >= switch_interval and misscounter >= 5 and misscounter <9:
+        if current_time - last_switch_time >= switch_interval and misscounter ==1:
             # Alterner entre JM1 et JM2
             if current_imageJM == JM1C: # si on détecte JM1 dans la zone où a été chargé l'image JM1
                 current_imageJM = JM2C
@@ -669,7 +687,7 @@ def draw_game_screen():
             # Mettre à jour le temps de changement d'image
             last_switch_time = current_time
 
-        if is_attacking and misscounter >=5 and misscounter <9:
+        if is_attacking and misscounter == 1:
             if current_time - attack_start_time < switch_interval:
                 # Afficher l'image d'attaque pendant 0.5 seconde
                 current_imageJM = JMAttackC
@@ -679,7 +697,7 @@ def draw_game_screen():
                 attack_start_time = 0
         
                 # Vérifier si l'intervalle de 0.5 seconde est passé et que misscounter >= 5 
-        if current_time - last_switch_time >= switch_interval and misscounter >= 9:
+        if current_time - last_switch_time >= switch_interval and misscounter == 2:
             # Alterner entre JM1 et JM2
             if current_imageJM == JM1CC: # si on détecte JM1 dans la zone où a été chargé l'image JM1
                 current_imageJM = JM2CC
@@ -689,7 +707,7 @@ def draw_game_screen():
             # Mettre à jour le temps de changement d'image
             last_switch_time = current_time
         
-        if is_attacking and misscounter >= 9:
+        if is_attacking and misscounter == 2:
             if current_time - attack_start_time < switch_interval:
                 # Afficher l'image d'attaque pendant 0.5 seconde
                 current_imageJM = JMAttackCC
@@ -769,7 +787,7 @@ def draw_game_screen():
         print(f"Active cochons: {len(active_cochons)}, Pattern Index: {pattern_index}")
         screen.blit(pygame.font.SysFont(None, 36).render(f"Score : {score[selected_player_index]}", True, WHITE), (20, 20))  # Affichage du score 
         # Vérifier si le joueur a perdu
-        if misscounter == 10:
+        if misscounter == 3:
             # On rentre les données de la game en fin de partie 
             sheet.append([
             date,
@@ -791,7 +809,7 @@ def draw_game_screen():
     else: # Cas où m'on choisit le personnage féminin
         
         # Vérifier si l'intervalle de 0.5 seconde est passé
-        if current_time - last_switch_time >= switch_interval and misscounter <5:
+        if current_time - last_switch_time >= switch_interval and misscounter ==0:
             # Alterner entre JM1 et JM2
             if current_imageJF == JF1: # si on détecte JM1 dans la zone où a été chargé l'image JM1
                 current_imageJF = JF2
@@ -801,7 +819,7 @@ def draw_game_screen():
             # Mettre à jour le temps de changement d'image
             last_switch_time = current_time
         
-        if is_attacking and misscounter <5:
+        if is_attacking and misscounter == 0:
             if current_time - attack_start_time < switch_interval:
                 # Afficher l'image d'attaque pendant 0.5 seconde
                 current_imageJF = JFAttack
@@ -811,7 +829,7 @@ def draw_game_screen():
                 attack_start_time = 0
 
         # Vérifier si l'intervalle de 0.5 seconde est passé
-        if current_time - last_switch_time >= switch_interval and misscounter >= 5 and misscounter <9:
+        if current_time - last_switch_time >= switch_interval and misscounter == 1:
             # Alterner entre JM1 et JM2
             if current_imageJF == JF1C: # si on détecte JM1 dans la zone où a été chargé l'image JM1
                 current_imageJF = JF2C
@@ -821,7 +839,7 @@ def draw_game_screen():
             # Mettre à jour le temps de changement d'image
             last_switch_time = current_time
 
-        if is_attacking and misscounter >=5 and misscounter <9:
+        if is_attacking and misscounter == 1:
             if current_time - attack_start_time < switch_interval:
                 # Afficher l'image d'attaque pendant 0.5 seconde
                 current_imageJF = JFAttackC
@@ -830,8 +848,7 @@ def draw_game_screen():
                 is_attacking = False
                 attack_start_time = 0
         
-                # Vérifier si l'intervalle de 0.5 seconde est passé et que misscounter >= 5 
-        if current_time - last_switch_time >= switch_interval and misscounter >= 9:
+        if current_time - last_switch_time >= switch_interval and misscounter == 2:
             # Alterner entre JM1 et JM2
             if current_imageJF == JF1CC: # si on détecte JM1 dans la zone où a été chargé l'image JM1
                 current_imageJF = JF2CC
@@ -841,7 +858,7 @@ def draw_game_screen():
             # Mettre à jour le temps de changement d'image
             last_switch_time = current_time
         
-        if is_attacking and misscounter >= 9:
+        if is_attacking and misscounter == 2:
             if current_time - attack_start_time < switch_interval:
                 # Afficher l'image d'attaque pendant 0.5 seconde
                 current_imageJF = JFAttackCC
@@ -919,7 +936,7 @@ def draw_game_screen():
         print(f"Active cochons: {len(active_cochons)}, Pattern Index: {pattern_index}")
         screen.blit(pygame.font.SysFont(None, 36).render(f"Score : {score[selected_player_index]}", True, WHITE), (20, 20))  # Affichage du score 
         # Vérifier si le joueur a perdu
-        if misscounter == 10:
+        if misscounter == 3:
              # On rentre les données de la game en fin de partie 
             sheet.append([
             date,
@@ -1033,8 +1050,19 @@ while running:
     elif current_screen == "leaderboard": 
         leaderboard()
 
+    # try:
+    #     while True:
+    #         if ser.in_waiting > 0:
+    #             data = ser.readline().decode().strip()  # Lire la ligne envoyée par l'Arduino
+    #             if data == "BUTTON_PRESSED":
+    #                 print("Bouton appuyé détecté ! 💅")
+    # except KeyboardInterrupt:
+    #     print("Arrêt du programme.")
+    # finally:
+    #     ser.close()
+        # Gestion des événements
+        
 
-    # Gestion des événements
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
@@ -1046,7 +1074,7 @@ while running:
                 go_back_to_menu()
             elif current_screen == "leaderboard" and event.key == pygame.K_ESCAPE:
                 current_screen = "select_player"
-            if current_screen == "game" and event.key == pygame.K_SPACE and not is_attacking:
+            if current_screen == "game" and event.key == pygame.K_SPACE and not is_attacking: #if current_screen == "game" and (event.key == pygame.K_SPACE or data == "BUTTON_PRESSED") and not is_attacking:
                 # Début de l'attaque
                 is_attacking = True
                 spell_channel.play(pygame.mixer.Sound("MagicSpell.mp3"))
