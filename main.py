@@ -6,6 +6,7 @@ import time
 import openpyxl
 from openpyxl import Workbook
 import os 
+import serial 
 
 pygame.init()
 
